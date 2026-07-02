@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Dashboard from '../components/Dashboard';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 const user = Astro.locals.user;
 const errorParam = Astro.url.searchParams.get('error');
@@ -18,22 +18,27 @@ if (errorParam === 'invalid_domain') {
   {user ? (
     <Dashboard user={user} client:load />
   ) : (
-    <div class="w-full max-w-md mx-auto p-8 bg-[#121310] border border-[#1c1d1a] rounded-2xl text-center space-y-6 shadow-xl relative overflow-hidden">
+    <div class="w-full max-w-md mx-auto p-8 bg-[#ffffff] dark:bg-[#121310] border border-[#edf0e8] dark:border-[#1c1d1a] rounded-2xl text-center space-y-6 shadow-xl relative overflow-hidden transition-colors duration-200">
       <!-- Top aesthetic bar -->
       <div class="absolute top-0 left-0 right-0 h-1.5 bg-[#94C700]"></div>
       
+      {/* Theme toggle corner positioning */}
+      <div class="absolute top-4 right-4">
+        <ThemeToggle client:load />
+      </div>
+
       <div class="space-y-2">
         <div class="w-16 h-16 rounded-2xl bg-[#94C700]/10 border border-[#94C700]/30 flex items-center justify-center mx-auto text-[#94C700] mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link-2"><path d="M9 17H7A5 5 0 0 1 7 7h2"></path><path d="M15 7h2a5 5 0 0 1 0 10h-2"></path><line x1="8" x2="16" y1="12" y2="12"></line></svg>
         </div>
-        <h1 class="text-white font-black text-2xl tracking-tight">Enlaces Cortos RPJ</h1>
-        <p class="text-[#575855] text-sm">
+        <h1 class="text-[#1c1d1a] dark:text-white font-black text-2xl tracking-tight">Enlaces Cortos RPJ</h1>
+        <p class="text-[#6d7067] dark:text-[#575855] text-sm">
           Generador interno de URLs acortadas y códigos QR para la Red de Pastoral Juvenil.
         </p>
       </div>
 
       {errorMessage && (
-        <div class="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl text-left leading-relaxed">
+        <div class="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs rounded-xl text-left leading-relaxed">
           {errorMessage}
         </div>
       )}
@@ -41,7 +46,7 @@ if (errorParam === 'invalid_domain') {
       <div class="pt-2">
         <a 
           href="/api/auth/login" 
-          class="w-full flex items-center justify-center gap-3 py-3.5 bg-white hover:bg-neutral-100 text-black font-bold rounded-xl transition cursor-pointer shadow-lg shadow-white/5"
+          class="w-full flex items-center justify-center gap-3 py-3.5 bg-white dark:bg-white hover:bg-neutral-100 text-black font-bold rounded-xl transition cursor-pointer shadow-lg border border-neutral-200 dark:border-transparent"
         >
           <!-- Google Icon -->
           <svg class="w-5 h-5" viewBox="0 0 24 24">
@@ -52,7 +57,7 @@ if (errorParam === 'invalid_domain') {
           </svg>
           Iniciar sesión con Google
         </a>
-        <div class="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-[#575855] font-mono">
+        <div class="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-[#6d7067] dark:text-[#575855] font-mono">
           <span>Acceso exclusivo para cuentas</span>
           <span class="text-[#94C700] font-bold">@rpj.es</span>
         </div>

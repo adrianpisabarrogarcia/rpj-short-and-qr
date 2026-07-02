@@ -1,19 +1,24 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import ThemeToggle from '../components/ThemeToggle';
 import { ArrowLeft } from 'lucide-react';
 ---
 
 <Layout title="Enlace no encontrado (404) | RPJ">
-  <div class="w-full max-w-md mx-auto p-8 bg-[#121310] border border-[#1c1d1a] rounded-2xl text-center space-y-6 shadow-xl relative overflow-hidden">
+  <div class="w-full max-w-md mx-auto p-8 bg-white dark:bg-[#121310] border border-[#edf0e8] dark:border-[#1c1d1a] rounded-2xl text-center space-y-6 shadow-xl relative overflow-hidden transition-colors duration-200">
     <!-- Accent line -->
     <div class="absolute top-0 left-0 right-0 h-1.5 bg-[#80CAE3]"></div>
     
+    <div class="absolute top-4 right-4">
+      <ThemeToggle client:load />
+    </div>
+
     <div class="space-y-2">
       <div class="w-16 h-16 rounded-2xl bg-[#80CAE3]/10 border border-[#80CAE3]/30 flex items-center justify-center mx-auto text-[#80CAE3] mb-4 font-mono text-xl font-bold">
         404
       </div>
-      <h1 class="text-white font-black text-2xl tracking-tight">Enlace no encontrado</h1>
-      <p class="text-[#575855] text-sm leading-relaxed">
+      <h1 class="text-[#1c1d1a] dark:text-white font-black text-2xl tracking-tight">Enlace no encontrado</h1>
+      <p class="text-[#6d7067] dark:text-[#575855] text-sm leading-relaxed">
         El enlace corto al que estás intentando acceder no existe o ha sido retirado. Verifica que el alias introducido sea correcto.
       </p>
     </div>
@@ -21,7 +26,7 @@ import { ArrowLeft } from 'lucide-react';
     <div class="pt-2">
       <a 
         href="/" 
-        class="w-full flex items-center justify-center gap-2 py-3 bg-[#1c1d1a] border border-[#2b2d28] hover:border-[#80CAE3]/50 text-white rounded-xl transition cursor-pointer text-sm font-semibold"
+        class="w-full flex items-center justify-center gap-2 py-3 bg-[#f5f7f2] dark:bg-[#1c1d1a] border border-[#edf0e8] dark:border-[#2b2d28] hover:border-[#80CAE3]/50 text-[#1c1d1a] dark:text-white rounded-xl transition cursor-pointer text-sm font-semibold"
       >
         <ArrowLeft size={16} /> Volver al Inicio
       </a>

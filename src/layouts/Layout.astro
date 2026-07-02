@@ -20,18 +20,31 @@ const { title } = Astro.props;
     <!-- Metatags SEO -->
     <meta name="description" content="Acortador de enlaces y generador de códigos QR para la Red de Pastoral Juvenil (RPJ)" />
     <meta name="theme-color" content="#94C700" />
+
+    <!-- Script inline bloqueante para prevenir flash de tema al cargar -->
+    <script is:inline>
+      const getThemePreference = () => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme');
+        }
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      };
+      
+      const isDark = getThemePreference() === 'dark';
+      document.documentElement.classList.toggle('dark', isDark);
+    </script>
   </head>
-  <body class="bg-[#0e0f0c] text-[#d4d8cc] font-sans antialiased min-h-screen selection:bg-[#94C700] selection:text-black">
+  <body class="bg-[#fcfdfa] dark:bg-[#0e0f0c] text-[#1c1d1a] dark:text-[#d4d8cc] font-sans antialiased min-h-screen selection:bg-[#94C700] selection:text-black transition-colors duration-200">
     <div class="relative overflow-hidden min-h-screen flex flex-col justify-between">
-      <!-- Glow background effects -->
-      <div class="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#94C700]/5 blur-[120px] pointer-events-none"></div>
-      <div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#80CAE3]/5 blur-[150px] pointer-events-none"></div>
+      <!-- Glow background effects (Visible in dark mode mainly) -->
+      <div class="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#94C700]/5 dark:bg-[#94C700]/5 blur-[120px] pointer-events-none"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#80CAE3]/5 dark:bg-[#80CAE3]/5 blur-[150px] pointer-events-none"></div>
       
       <main class="flex-grow flex items-center justify-center p-4 md:p-8 z-10">
         <slot />
       </main>
 
-      <footer class="text-center py-6 text-sm text-[#575855] z-10 border-t border-[#1c1d1a]/80 bg-[#0e0f0c]/50 backdrop-blur-sm">
+      <footer class="text-center py-6 text-sm text-[#6d7067] dark:text-[#575855] z-10 border-t border-[#edf0e8] dark:border-[#1c1d1a]/80 bg-[#fcfdfa]/50 dark:bg-[#0e0f0c]/50 backdrop-blur-sm transition-colors duration-200">
         <p>© {new Date().getFullYear()} Red de Pastoral Juvenil (RPJ). Todos los derechos reservados.</p>
       </footer>
     </div>
@@ -44,6 +57,9 @@ const { title } = Astro.props;
     width: 6px;
   }
   ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .dark ::-webkit-scrollbar-track {
     background: #0e0f0c;
   }
   ::-webkit-scrollbar-thumb {
