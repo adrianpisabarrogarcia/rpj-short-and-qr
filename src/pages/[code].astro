@@ -1,0 +1,49 @@
+---
+import { db } from '../db';
+import { urls } from '../db/schema';
+import { eq, sql } from 'drizzle-orm';
+
+const { code } = Astro.params;
+
+if (!code) {
+  return Astro.redirect('/404');
+}
+
+// 1. Query matching short slug
+const found = await db.select().from(urls).where(eq(urls.id, code)).limit(1);
+
+if (found.length === 0) {
+  return Astro.redirect('/404');
+}
+
+const targetUrl = found[0];
+
+// 2. Increment clicks asynchronously / in background
+try {
+  // Use a promise fire-and-forget or fast query
+  await db
+    .update(urls)
+    .set({ clicks: sql`${urls.clicks} + 1` })
+    .where(eq(urls.id, code));
+} catch (err) {
+  console.error(`Failed to increment click stats for code: ${code}`, err);
+}
+
+// 3. Perform 307 temporary redirect
+return Astro.redirect(targetUrl.originalUrl, 307);
+---
+<!-- Redirection layout (fallbacks in case client doesn't redirect instantly) -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content={`0;url=${targetUrl.originalUrl}`} />
+  <title>Redireccionando...</title>
+</head>
+<body class="bg-[#121310] text-[#575855] flex items-center justify-center min-h-screen font-sans">
+  <div class="text-center">
+    <div class="inline-block w-8 h-8 border-4 border-[#94C700] border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="text-lg">Redireccionando a <span class="text-white font-medium">{targetUrl.originalUrl}</span>...</p>
+  </div>
+</body>
+</html>

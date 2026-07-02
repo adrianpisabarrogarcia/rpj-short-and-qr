@@ -1,0 +1,56 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    
+    <!-- Metatags SEO -->
+    <meta name="description" content="Acortador de enlaces y generador de códigos QR para la Red de Pastoral Juvenil (RPJ)" />
+    <meta name="theme-color" content="#94C700" />
+  </head>
+  <body class="bg-[#0e0f0c] text-[#d4d8cc] font-sans antialiased min-h-screen selection:bg-[#94C700] selection:text-black">
+    <div class="relative overflow-hidden min-h-screen flex flex-col justify-between">
+      <!-- Glow background effects -->
+      <div class="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#94C700]/5 blur-[120px] pointer-events-none"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#80CAE3]/5 blur-[150px] pointer-events-none"></div>
+      
+      <main class="flex-grow flex items-center justify-center p-4 md:p-8 z-10">
+        <slot />
+      </main>
+
+      <footer class="text-center py-6 text-sm text-[#575855] z-10 border-t border-[#1c1d1a]/80 bg-[#0e0f0c]/50 backdrop-blur-sm">
+        <p>© {new Date().getFullYear()} Red de Pastoral Juvenil (RPJ). Todos los derechos reservados.</p>
+      </footer>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  /* Custom scrollbar matching RPJ style */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0e0f0c;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #94C700;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7ba300;
+  }
+</style>
