@@ -126,36 +126,29 @@ export default function Dashboard({ user }: DashboardProps) {
 
       const ctx = tempCanvas.getContext('2d');
       if (ctx && includeLogo) {
-        // We'll draw a modern minimal central square with rounded-like style containing a styling center design
-        // because loading external assets in canvas synchronously can block.
-        // We design a beautiful green/black emblem.
-        const logoSize = size * 0.20; // 20% of QR size
+        const logoSize = size * 0.22; // Slightly larger for better icon visibility
         const x = (size - logoSize) / 2;
         const y = (size - logoSize) / 2;
 
         // Draw background card for logo
-        ctx.fillStyle = qrBgColor;
+        ctx.fillStyle = qrBgColor === '#ffffff00' ? '#ffffff' : qrBgColor;
         ctx.beginPath();
-        ctx.roundRect?.(x - 6, y - 6, logoSize + 12, logoSize + 12, 10);
+        ctx.roundRect?.(x - 8, y - 8, logoSize + 16, logoSize + 16, 12);
         ctx.fill();
 
-        // Draw an inner border with RPJ green
-        ctx.strokeStyle = '#94C700';
-        ctx.lineWidth = 4;
-        ctx.stroke();
-
-        // Draw logo content placeholder (Inner circle with chain link emblem)
-        ctx.fillStyle = '#94C700';
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, logoSize / 2 - 4, 0, 2 * Math.PI);
-        ctx.fill();
-
-        // Draw custom inner emblem text "RPJ"
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 36px Arial, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('RPJ', size / 2, size / 2 + 1);
+        // Load and draw the official logo.webp image onto canvas
+        const img = new Image();
+        img.src = '/logo.webp';
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            ctx.drawImage(img, x, y, logoSize, logoSize);
+            resolve(true);
+          };
+          img.onerror = (err) => {
+            console.error('Failed to load RPJ logo image in canvas', err);
+            reject(err);
+          };
+        });
       }
 
       const dataUrl = tempCanvas.toDataURL('image/png');
