@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Link, 
   QrCode, 
@@ -13,7 +13,9 @@ import {
   BarChart2,
   Download,
   Trash2,
-  Edit2
+  Edit2,
+  Sliders,
+  Palette
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -40,7 +42,7 @@ export default function Dashboard({ user }: DashboardProps) {
   const [error, setError] = useState('');
   
   // URL creation result state
-  const [result, setResult] = useState<{ shortUrl: string; slug: string; qrDataUrl: string } | null>(null);
+  const [result, setResult] = useState<{ shortUrl: string; slug: string } | null>(null);
   const [copied, setCopied] = useState(false);
   
   // History URLs
@@ -48,8 +50,15 @@ export default function Dashboard({ user }: DashboardProps) {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   
+  // QR Customization states (for the live result card and lightbox)
+  const [qrColor, setQrColor] = useState('#000000');
+  const [qrBgColor, setQrBgColor] = useState('#ffffff');
+  const [includeLogo, setIncludeLogo] = useState(true);
+  const [qrDataUrl, setQrDataUrl] = useState('');
+
   // Active QR preview modal
-  const [selectedQr, setSelectedQr] = useState<{ url: string; slug: string; dataUrl: string } | null>(null);
+  const [selectedQr, setSelectedQr] = useState<{ url: string; slug: string } | null>(null);
+  const [modalQrDataUrl, setModalQrDataUrl] = useState('');
 
   // Edit Link Modal State
   const [editingUrl, setEditingUrl] = useState<UrlData | null>(null);
@@ -62,9 +71,26 @@ export default function Dashboard({ user }: DashboardProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Canvas ref for drawing with logo overlay
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   useEffect(() => {
     fetchHistory();
   }, []);
+
+  // Re-generate QR when customization parameters or active result changes
+  useEffect(() => {
+    if (result) {
+      generateQr(result.shortUrl, false);
+    }
+  }, [result, qrColor, qrBgColor, includeLogo]);
+
+  // Re-generate modal QR when parameters or active modal changes
+  useEffect(() => {
+    if (selectedQr) {
+      generateQr(selectedQr.url, true);
+    }
+  }, [selectedQr, qrColor, qrBgColor, includeLogo]);
 
   const fetchHistory = async () => {
     try {
@@ -77,6 +103,69 @@ export default function Dashboard({ user }: DashboardProps) {
       console.error('Error fetching history:', err);
     } finally {
       setLoadingHistory(false);
+    }
+  };
+
+  // Helper to render QR Code into canvas and apply logo overlay
+  const generateQr = async (text: string, isModal = false) => {
+    try {
+      const size = 600;
+      
+      // Use temporary canvas element to draw QR first
+      const tempCanvas = document.createElement('canvas');
+      
+      await QRCode.toCanvas(tempCanvas, text, {
+        width: size,
+        margin: 2,
+        errorCorrectionLevel: 'H', // High error correction to support logo overlay
+        color: {
+          dark: qrColor,
+          light: qrBgColor,
+        },
+      });
+
+      const ctx = tempCanvas.getContext('2d');
+      if (ctx && includeLogo) {
+        // We'll draw a modern minimal central square with rounded-like style containing a styling center design
+        // because loading external assets in canvas synchronously can block.
+        // We design a beautiful green/black emblem.
+        const logoSize = size * 0.20; // 20% of QR size
+        const x = (size - logoSize) / 2;
+        const y = (size - logoSize) / 2;
+
+        // Draw background card for logo
+        ctx.fillStyle = qrBgColor;
+        ctx.beginPath();
+        ctx.roundRect?.(x - 6, y - 6, logoSize + 12, logoSize + 12, 10);
+        ctx.fill();
+
+        // Draw an inner border with RPJ green
+        ctx.strokeStyle = '#94C700';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // Draw logo content placeholder (Inner circle with chain link emblem)
+        ctx.fillStyle = '#94C700';
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, logoSize / 2 - 4, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Draw custom inner emblem text "RPJ"
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 36px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('RPJ', size / 2, size / 2 + 1);
+      }
+
+      const dataUrl = tempCanvas.toDataURL('image/png');
+      if (isModal) {
+        setModalQrDataUrl(dataUrl);
+      } else {
+        setQrDataUrl(dataUrl);
+      }
+    } catch (err) {
+      console.error('Error generating QR Canvas', err);
     }
   };
 
@@ -106,21 +195,10 @@ export default function Dashboard({ user }: DashboardProps) {
       }
 
       const shortUrl = `${window.location.protocol}//${window.location.host}/${data.slug}`;
-      
-      // Generate QR Code dynamic URL
-      const qrDataUrl = await QRCode.toDataURL(shortUrl, {
-        width: 600,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff',
-        },
-      });
 
       setResult({
         shortUrl,
         slug: data.slug,
-        qrDataUrl,
       });
 
       setOriginalUrl('');
@@ -207,19 +285,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const generateAndOpenQr = async (slug: string) => {
     const shortUrl = `${window.location.protocol}//${window.location.host}/${slug}`;
-    try {
-      const qrDataUrl = await QRCode.toDataURL(shortUrl, {
-        width: 600,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff',
-        },
-      });
-      setSelectedQr({ url: shortUrl, slug, dataUrl: qrDataUrl });
-    } catch (err) {
-      console.error('Error generating QR', err);
-    }
+    setSelectedQr({ url: shortUrl, slug });
   };
 
   const startEdit = (item: UrlData) => {
@@ -256,11 +322,11 @@ export default function Dashboard({ user }: DashboardProps) {
         </a>
       </header>
 
-      {/* Main Grid: Generator & Result */}
+      {/* Main Grid: Generator & Result & Customizer */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Form Generator Panel */}
-        <section className="lg:col-span-2 p-6 bg-[#121310] border border-[#1c1d1a] rounded-2xl flex flex-col justify-between">
+        <section className="lg:col-span-2 p-6 bg-[#121310] border border-[#1c1d1a] rounded-2xl flex flex-col justify-between space-y-6">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="p-2 bg-[#94C700]/10 rounded-lg text-[#94C700]">
@@ -318,6 +384,76 @@ export default function Dashboard({ user }: DashboardProps) {
               </button>
             </form>
           </div>
+
+          {/* QR Code Realtime Customizer Panel */}
+          <div className="pt-6 border-t border-[#1c1d1a]/80 space-y-4">
+            <div className="flex items-center gap-2 text-white font-bold text-sm">
+              <Sliders size={16} className="text-[#94C700]" />
+              <span>Personalizar Diseño del Código QR</span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-[#d4d8cc]">
+              {/* Foreground Color Picker */}
+              <div className="space-y-1.5">
+                <span className="text-[#575855] font-semibold uppercase tracking-wider block">Color de Módulos</span>
+                <div className="flex gap-2">
+                  {[
+                    { hex: '#000000', label: 'Negro' },
+                    { hex: '#94C700', label: 'Verde RPJ' },
+                    { hex: '#80CAE3', label: 'Azul RPJ' },
+                    { hex: '#3300C7', label: 'Azul Oscuro' }
+                  ].map((color) => (
+                    <button
+                      key={color.hex}
+                      type="button"
+                      onClick={() => setQrColor(color.hex)}
+                      className={`w-6 h-6 rounded-full border cursor-pointer transition ${qrColor === color.hex ? 'border-white scale-110 shadow-lg shadow-white/10' : 'border-transparent'}`}
+                      style={{ backgroundColor: color.hex }}
+                      title={color.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Background Color Picker */}
+              <div className="space-y-1.5">
+                <span className="text-[#575855] font-semibold uppercase tracking-wider block">Color de Fondo</span>
+                <div className="flex gap-2">
+                  {[
+                    { hex: '#ffffff', label: 'Blanco' },
+                    { hex: '#f7fbe6', label: 'Verde Claro' },
+                    { hex: '#80cae3', label: 'Azul' },
+                    { hex: '#ffffff00', label: 'Transparente' }
+                  ].map((color) => (
+                    <button
+                      key={color.hex}
+                      type="button"
+                      onClick={() => setQrBgColor(color.hex)}
+                      className={`w-6 h-6 rounded-full border cursor-pointer transition ${qrBgColor === color.hex ? 'border-white scale-110 shadow-lg shadow-white/10' : 'border-neutral-700/50'}`}
+                      style={{ backgroundColor: color.hex === '#ffffff00' ? '#222' : color.hex }}
+                      title={color.label}
+                    >
+                      {color.hex === '#ffffff00' && <span className="text-[9px] text-[#575855] font-bold">X</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Central Logo Overlay Toggle */}
+              <div className="space-y-1.5 flex flex-col justify-center">
+                <span className="text-[#575855] font-semibold uppercase tracking-wider block mb-1">Branding Corporativo</span>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={includeLogo}
+                    onChange={(e) => setIncludeLogo(e.target.checked)}
+                    className="w-4 h-4 rounded accent-[#94C700] bg-[#0e0f0c] border-[#1c1d1a]"
+                  />
+                  <span className="text-xs">Incluir Logo RPJ al centro</span>
+                </label>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Dynamic Card Result */}
@@ -328,9 +464,15 @@ export default function Dashboard({ user }: DashboardProps) {
                 <Sparkles size={16} className="text-[#94C700]" /> ¡Enlace Generado!
               </h4>
               
-              {/* QR Preview */}
-              <div className="bg-white p-3 rounded-xl inline-block mx-auto border-2 border-[#94C700]/30 shadow-lg shadow-[#94C700]/5 transition-transform hover:scale-105">
-                <img src={result.qrDataUrl} alt="QR Enlace" className="w-36 h-36" />
+              {/* QR Preview Canvas with custom styles applied */}
+              <div className="bg-[#1c1d1a]/50 p-3 rounded-xl inline-block mx-auto border border-[#1c1d1a] shadow-lg transition-transform hover:scale-105">
+                <div className="p-2 bg-white rounded-lg">
+                  {qrDataUrl ? (
+                    <img src={qrDataUrl} alt="QR Enlace Personalizado" className="w-36 h-36" />
+                  ) : (
+                    <div className="w-36 h-36 flex items-center justify-center text-black text-xs font-mono">Renderizando...</div>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -356,7 +498,7 @@ export default function Dashboard({ user }: DashboardProps) {
                     Visitar <ExternalLink size={12} />
                   </a>
                   <a 
-                    href={result.qrDataUrl} 
+                    href={qrDataUrl} 
                     download={`qr-rpj-${result.slug}.png`}
                     className="flex-grow flex items-center justify-center gap-1.5 py-2 px-3 bg-[#94C700]/10 border border-[#94C700]/20 hover:border-[#94C700]/50 text-[#94C700] hover:text-[#a7e100] rounded-lg text-xs font-semibold transition"
                   >
@@ -483,7 +625,7 @@ export default function Dashboard({ user }: DashboardProps) {
           onClick={() => setSelectedQr(null)}
         >
           <div 
-            className="bg-[#121310] border border-[#1c1d1a] p-6 rounded-2xl max-w-xs w-full text-center space-y-4 shadow-xl"
+            className="bg-[#121310] border border-[#1c1d1a] p-6 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-2">
@@ -496,8 +638,14 @@ export default function Dashboard({ user }: DashboardProps) {
               </button>
             </div>
             
-            <div className="bg-white p-4 rounded-xl inline-block border-2 border-[#94C700]/30 shadow-lg">
-              <img src={selectedQr.dataUrl} alt="Código QR Grande" className="w-56 h-56 mx-auto" />
+            <div className="bg-[#1c1d1a]/50 p-4 rounded-xl inline-block border border-[#1c1d1a] shadow-lg mx-auto">
+              <div className="p-2 bg-white rounded-lg">
+                {modalQrDataUrl ? (
+                  <img src={modalQrDataUrl} alt="Código QR Grande Personalizado" className="w-56 h-56 mx-auto" />
+                ) : (
+                  <div className="w-56 h-56 flex items-center justify-center text-black text-xs font-mono">Generando...</div>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-2">
@@ -508,7 +656,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 Copiar Enlace
               </button>
               <a 
-                href={selectedQr.dataUrl} 
+                href={modalQrDataUrl} 
                 download={`qr-rpj-${selectedQr.slug}.png`}
                 className="flex-grow flex items-center justify-center gap-1.5 py-2 px-3 bg-[#94C700] hover:bg-[#a7e100] text-black rounded-lg text-xs font-semibold transition font-bold"
               >
