@@ -1,4 +1,4 @@
-declare namespace Astro {
+declare namespace App {
   interface Locals {
     user: import('./auth').SessionUser | null;
   }
